@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELIX Code Labs | Future Engineering</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+    <style>
+        /* Custom Properties */
+        :root {
+            --neon-cyan: #00f3ff;
+            --neon-pink: #bc13fe;
+            --neon-purple: #bd00ff;
+            --dark-bg: #050510;
+            --grid-color: rgba(188, 19, 254, 0.3);
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: #fff;
+            font-family: 'Share Tech Mono', monospace;
+            overflow-x: hidden;
+            margin: 0;
+        }
+
+        h1, h2, h3, .brand-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Scanline Effect */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.1) 50%,
+                rgba(0,0,0,0.1)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Neon Glow Utility */
+        .neon-text-cyan {
+            text-shadow: 0 0 5px var(--neon-cyan), 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan);
+        }
+        .neon-text-pink {
+            text-shadow: 0 0 5px var(--neon-pink), 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
+        }
+        
+        .neon-box-pink {
+            box-shadow: 0 0 5px var(--neon-pink), inset 0 0 5px var(--neon-pink);
+            border: 1px solid var(--neon-pink);
+        }
+
+        /* Glitch Effect */
+        .glitch-wrapper { position: relative; }
+        .glitch {
+            position: relative;
+            color: white;
+            font-size: 4rem;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        .glitch::before, .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--dark-bg);
+        }
+        .glitch::before {
+            left: 2px; text-shadow: -1px 0 #ff00c1;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+        .glitch::after {
+            left: -2px; text-shadow: -1px 0 #00fff9;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim2 5s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-anim {
+            0% { clip: rect(13px, 9999px, 81px, 0); }
+            5% { clip: rect(68px, 9999px, 19px, 0); }
+            100% { clip: rect(23px, 9999px, 98px, 0); }
+        }
+        @keyframes glitch-anim2 {
+            0% { clip: rect(65px, 9999px, 96px, 0); }
+            5% { clip: rect(2px, 9999px, 34px, 0); }
+            100% { clip: rect(48px, 9999px, 2px, 0); }
+        }
+
+        /* Card Hover Effects */
+        .project-card {
+            transition: all 0.3s ease;
+            background: rgba(10, 10, 20, 0.8);
+            backdrop-filter: blur(5px);
+        }
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 20px var(--neon-cyan);
+            border-color: var(--neon-cyan);
+        }
+        .project-card.featured:hover {
+            box-shadow: 0 0 30px var(--neon-pink);
+            border-color: var(--neon-pink);
+        }
+        
+        /* Locked Card Styling */
+        .project-card.locked {
+            border-color: #333;
+            background: rgba(5, 5, 10, 0.6);
+            cursor: not-allowed;
+        }
+        .project-card.locked:hover {
+            transform: none;
+            box-shadow: none;
+            border-color: #444;
+        }
+
+        /* Canvas Background */
+        #retro-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: radial-gradient(circle at center top, #1a0b2e 0%, #000000 70%);
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-pink-500 selection:text-white">
+
+    <!-- Background Animation Canvas -->
+    <canvas id="retro-grid"></canvas>
+    
+    <!-- CRT Scanline Overlay -->
+    <div class="scanlines"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-40 top-0 left-0 border-b border-white/10 bg-black/80 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold neon-text-pink brand-font tracking-wider">HELIX<span class="text-cyan-400">Labs</span></span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a href="#home" class="hover:text-cyan-400 hover:neon-text-cyan transition px-3 py-2 rounded-md text-sm font-medium">/HOME</a>
+                        <a href="#products" class="hover:text-cyan-400 hover:neon-text-cyan transition px-3 py-2 rounded-md text-sm font-medium">/PRODUCTS</a>
+                        <a href="./profile.html" class="hover:text-pink-400 hover:neon-text-pink transition px-3 py-2 rounded-md text-sm font-medium">/PROFILE</a>
+                        <a href="#about" class="hover:text-cyan-400 hover:neon-text-cyan transition px-3 py-2 rounded-md text-sm font-medium">/ABOUT</a>
+                        <a href="https://github.com/helix-code-labs" target="_blank" class="bg-cyan-900/30 border border-cyan-500 hover:bg-cyan-500/20 text-cyan-400 px-4 py-1 rounded transition duration-300">
+                            <i class="fab fa-github mr-2"></i>GITHUB
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="min-h-screen flex items-center justify-center relative pt-16">
+        <div class="text-center z-10 px-4">
+            <p class="text-cyan-400 tracking-[0.3em] mb-4 text-sm md:text-base typing-effect">INITIALIZING SYSTEM...</p>
+            <div class="glitch-wrapper mb-6">
+                <h1 class="glitch text-4xl md:text-7xl lg:text-9xl mb-2" data-text="HELIX">HELIX</h1>
+                <h2 class="text-2xl md:text-4xl neon-text-pink brand-font tracking-widest mt-2">CODE LABS</h2>
+            </div>
+            
+            <p class="mt-4 max-w-2xl mx-auto text-gray-300 text-lg md:text-xl">
+                Retrofuturism Engineering. Building the tools of tomorrow with the soul of the arcade era.
+            </p>
+
+            <div class="mt-10 flex flex-col md:flex-row gap-4 justify-center">
+                <a href="#products" class="neon-box-pink text-pink-400 hover:bg-pink-500 hover:text-white px-8 py-3 text-lg font-bold transition duration-300 rounded-sm skew-x-[-10deg] inline-block">
+                    <span class="skew-x-[10deg] inline-block">EXPLORE PRODUCTS</span>
+                </a>
+                <a href="https://github.com/helix-code-labs/helix-code-labs.github.io" target="_blank" class="border border-gray-600 text-gray-300 hover:border-white hover:text-white px-8 py-3 text-lg transition duration-300 rounded-sm skew-x-[-10deg] inline-block">
+                    <span class="skew-x-[10deg] inline-block">VIEW SOURCE</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Decorative Elements -->
+        <div class="absolute bottom-10 left-10 hidden md:block text-xs text-gray-500">
+            SYSTEM_STATUS: ONLINE<br>
+            LOCATION: BANGKOK_SERVER_NODE<br>
+            V.1.0.0
+        </div>
+    </section>
+
+    <!-- Product Showcase -->
+    <section id="products" class="py-20 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="mb-12 border-b border-cyan-500/30 pb-4 flex justify-between items-end">
+                <div>
+                    <h2 class="text-3xl md:text-5xl font-bold neon-text-cyan mb-2">/ SELECTED_PROJECTS</h2>
+                    <p class="text-gray-400 font-mono">Deployments from the lab.</p>
+                </div>
+                <div class="hidden md:block text-cyan-500 text-2xl">
+                    <i class="fas fa-microchip animate-pulse"></i>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <!-- FEATURED PRODUCT: SnapPoint -->
+                <article class="project-card featured border border-pink-500/50 rounded-lg p-6 relative overflow-hidden group col-span-1 md:col-span-2 lg:col-span-2">
+                    <div class="absolute top-0 right-0 bg-pink-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg z-20">
+                        MVP LAUNCH
+                    </div>
+                    <!-- Background Glow -->
+                    <div class="absolute inset-0 bg-gradient-to-br from-pink-900/20 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
+
+                    <div class="relative z-10 flex flex-col h-full justify-between">
+                        <div>
+                            <div class="flex items-center space-x-3 mb-4">
+                                <i class="fas fa-stamp text-3xl text-pink-400"></i>
+                                <h3 class="text-3xl font-bold text-white group-hover:neon-text-pink transition">SnapPoint</h3>
+                            </div>
+                            <p class="text-gray-300 mb-6 text-lg leading-relaxed">
+                                <strong>Zero-Touch Loyalty Program.</strong> A web application designed for solopreneurs and slow bars. 
+                                Eliminate operational pain with a self-service point collection system via LINE LIFF. 
+                                No POS required. No extra hardware. Just a QR Code.
+                            </p>
+                            <div class="flex flex-wrap gap-2 mb-6">
+                                <span class="bg-pink-900/40 border border-pink-500/30 text-pink-300 text-xs px-2 py-1 rounded">LINE LIFF</span>
+                                <span class="bg-pink-900/40 border border-pink-500/30 text-pink-300 text-xs px-2 py-1 rounded">React.js</span>
+                                <span class="bg-pink-900/40 border border-pink-500/30 text-pink-300 text-xs px-2 py-1 rounded">SaaS</span>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <a href="./snappoint.html" class="inline-flex items-center text-pink-400 hover:text-white font-bold transition group-hover:translate-x-2">
+                                VIEW PRODUCT SPECS <i class="fas fa-arrow-right ml-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- LOCKED / COMING SOON -->
+                <article class="project-card locked border border-gray-800 rounded-lg p-6 relative overflow-hidden flex flex-col justify-center items-center text-center">
+                    <div class="text-5xl text-gray-700 mb-4 group-hover:text-gray-600 transition">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-500 mb-2">CLASSIFIED</h3>
+                    <p class="text-gray-600 text-xs font-mono uppercase tracking-widest">
+                        Access Restricted<br>Development in Progress
+                    </p>
+                </article>
+
+                <!-- LOCKED / COMING SOON -->
+                <article class="project-card locked border border-gray-800 rounded-lg p-6 relative overflow-hidden flex flex-col justify-center items-center text-center">
+                    <div class="text-5xl text-gray-700 mb-4">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-500 mb-2">PROJECT_X</h3>
+                    <p class="text-gray-600 text-xs font-mono uppercase tracking-widest">
+                        Coming Soon<br>Q4 2024
+                    </p>
+                </article>
+
+                <!-- LOCKED / COMING SOON -->
+                <article class="project-card locked border border-gray-800 rounded-lg p-6 relative overflow-hidden flex flex-col justify-center items-center text-center md:col-span-2 lg:col-span-1">
+                    <div class="text-5xl text-gray-700 mb-4">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-500 mb-2">SYSTEM_OFFLINE</h3>
+                    <p class="text-gray-600 text-xs font-mono uppercase tracking-widest">
+                        Awaiting Deployment
+                    </p>
+                </article>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- About / Footer -->
+    <footer id="about" class="bg-black/90 border-t border-cyan-900 pt-16 pb-8 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-4"><span class="text-cyan-400">HELIX</span> CODE LABS</h2>
+                    <p class="text-gray-400 mb-6">
+                        We are a collective of digital architects obsessed with the aesthetic of the past and the technology of the future. We build tools that developers love to use.
+                    </p>
+                    <div class="flex space-x-6">
+                        <a href="#" class="text-gray-400 hover:text-white text-2xl transition"><i class="fab fa-twitter"></i></a>
+                        <a href="https://github.com/helix-code-labs" class="text-gray-400 hover:text-white text-2xl transition"><i class="fab fa-github"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white text-2xl transition"><i class="fab fa-discord"></i></a>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-gray-500 text-sm mb-2">CONTACT_PROTOCOL:</p>
+                    <a href="mailto:l.pasawee@gmail.com" class="text-xl text-pink-400 hover:neon-text-pink transition">l.pasawee@gmail.com</a>
+                    <div class="mt-8 text-xs text-gray-600 font-mono">
+                        © 2024 HELIX CODE LABS. ALL RIGHTS RESERVED.<br>
+                        RENDERED IN: HUMAN_TIME
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Retro Grid Animation
+        const canvas = document.getElementById('retro-grid');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+        let offset = 0;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            const horizon = height * 0.45;
+            const cx = width / 2;
+            const cy = horizon;
+            
+            // Vertical Lines
+            ctx.strokeStyle = 'rgba(188, 19, 254, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let i = -width; i < width * 2; i += 40 * 2) {
+                ctx.moveTo(i, height);
+                ctx.lineTo(cx + (i - cx) * 0.1, cy);
+            }
+            ctx.stroke();
+
+            // Horizontal Lines
+            ctx.beginPath();
+            for (let i = 0; i < 20; i++) {
+                let z = (offset + i * 50) % 1000; 
+                if(z < 1) z += 1000;
+                const yPos = horizon + 300 * (200 / (1000 - z));
+                
+                if (yPos < height) {
+                    const opacity = Math.max(0, (yPos - horizon) / (height - horizon) * 0.5);
+                    ctx.strokeStyle = `rgba(0, 243, 255, ${opacity})`;
+                    ctx.moveTo(0, yPos);
+                    ctx.lineTo(width, yPos);
+                }
+            }
+            ctx.stroke();
+
+            // Glow
+            const gradient = ctx.createRadialGradient(width/2, horizon, 0, width/2, horizon, 200);
+            gradient.addColorStop(0, "rgba(189, 0, 255, 0.2)");
+            gradient.addColorStop(1, "rgba(0,0,0,0)");
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            offset = (offset + 1) % 50;
+            requestAnimationFrame(draw);
+        }
+        draw();
+    </script>
+</body>
+</html>
